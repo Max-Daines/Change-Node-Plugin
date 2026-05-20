@@ -1,0 +1,29 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="ChangeNodePlugin"
+run/main_scene="uid://db1nyge1hfaqq"
+config/features=PackedStringArray("4.5", "C#", "Forward Plus")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1000
+window/size/viewport_height=750
+
+[dotnet]
+
+project/assembly_name="ChangeNodePlugin"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/change_node/plugin.cfg")
