@@ -1,31 +1,23 @@
 #if TOOLS
 using Godot;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 [Tool]
 public partial class change_node : EditorPlugin
 {
-	private Tree customSceneTree;
 	private Tree customFileSystem;
-	private Node sceneTreeRoot;
-	private DirAccess fileSystem; 
+	private List<(string, string)> filePaths = new();
 	public override void _EnterTree()
 	{
 		// Initialization of the plugin goes here.
-		customSceneTree = GetNode<Tree>("VBoxContainer/HBoxContainer/SceneTree/VBoxContainer/Tree");
-		sceneTreeRoot = GetNode(".");
-		TreeItem treeRoot = customSceneTree.CreateItem(); 
-		treeRoot.SetText(0, sceneTreeRoot.Name);
-		treeRoot.SetMetadata(0, sceneTreeRoot.GetPath());
-		buildTree(sceneTreeRoot, treeRoot);
 
-		customFileSystem = GetNode<Tree>("VBoxContainer/HBoxContainer/FileSystem/Tree");
+		customFileSystem = GetNode<Tree>("VBoxContainer/HBoxContainer/VBoxContainer/FileSystem/Tree");
 
-		
 		buildCustomFilesystem("res://");
 	}
 
-	private void buildCustomFilesystem(string path, TreeItem parent = null)
+	private void buildCustomFilesystem(string path)
 	{
 		DirAccess dir = DirAccess.Open(path);
 		dir.IncludeHidden = false;
@@ -44,38 +36,55 @@ public partial class change_node : EditorPlugin
 			{
 				if (dir.CurrentIsDir())
 				{
-					TreeItem treeItem = customFileSystem.CreateItem(parent);
-					treeItem.SetText(0, elementName);
-					treeItem.SetMetadata(0, elementPath);
-					Debug.Print($"{elementPath}/{elementName}");
-					buildCustomFilesystem($"{elementPath}/{elementName}", treeItem);
+					buildCustomFilesystem($"{elementPath}/{elementName}");
 				}
 
 				else
 				{
-					TreeItem treeItem = customFileSystem.CreateItem(parent);
-					treeItem.SetText(0, elementName);
-					Debug.Print($"{elementPath}/{elementName}");
-					treeItem.SetMetadata(0, $"{elementPath}/{elementName}");
+					(string, string) file;
+					if (elementPath.EndsWith("/"))
+					{
+						file = (elementName, $"{elementPath}{elementName}");
+					}
+					else
+					{
+						file = (elementName, $"{elementPath}/{elementName}");
+					}
+					
+					filePaths.Add(file);
 				}
 				elementName = dir.GetNext();
 			}
 		}
+		buildFileTree();
 	}
 
-	private void buildTree(Node node, TreeItem treeItem)
+	private void buildFileTree(string searchTerm = "")
 	{
-		for(int i = 0; i < node.GetChildCount(); i++)
+		customFileSystem.Clear();
+		foreach ((string, string) path in filePaths)
 		{
-			Node child = node.GetChild(i);
-			TreeItem newTreeItem = customSceneTree.CreateItem(treeItem);
-			newTreeItem.SetText(0, child.Name);
-			newTreeItem.SetMetadata(0, child.GetPath());
-			if (node.GetChildCount() > 0)
+			if (searchTerm == "")
 			{
-				buildTree(child, newTreeItem);
+				TreeItem treeItem = customFileSystem.CreateItem();
+				treeItem.SetText(0, path.Item1);
+				treeItem.SetMetadata(0, path.Item2);
+			}
+			else if (checkFileNameAgainstSearchTerm(path.Item1, searchTerm))
+			{
+				TreeItem treeItem = customFileSystem.CreateItem();
+				treeItem.SetText(0, path.Item1);
+				treeItem.SetMetadata(0, path.Item2);
 			}
 		}
+	}
+
+	private bool checkFileNameAgainstSearchTerm(string name, string searchTerm)
+	{
+		if (name.ToLower().Contains(searchTerm.ToLower())){
+			return true;
+		}
+		return false;
 	}
 
 	private void _on_file_system_tree_multi_selected(TreeItem item, int column, bool selected)
@@ -84,6 +93,11 @@ public partial class change_node : EditorPlugin
 		{
 		Debug.Print("" + item.GetMetadata(0));
 		}
+	}
+
+	private void _on_line_edit_text_changed(string text)
+	{
+		buildFileTree(text);
 	}
 
 	public override void _ExitTree()
