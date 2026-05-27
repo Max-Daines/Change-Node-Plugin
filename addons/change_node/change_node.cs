@@ -70,21 +70,13 @@ public partial class change_node : EditorPlugin
 				treeItem.SetText(0, path.Item1);
 				treeItem.SetMetadata(0, path.Item2);
 			}
-			else if (checkFileNameAgainstSearchTerm(path.Item1, searchTerm))
+			else if (path.Item1.ToLower().Contains(searchTerm.ToLower()))
 			{
 				TreeItem treeItem = customFileSystem.CreateItem();
 				treeItem.SetText(0, path.Item1);
 				treeItem.SetMetadata(0, path.Item2);
 			}
 		}
-	}
-
-	private bool checkFileNameAgainstSearchTerm(string name, string searchTerm)
-	{
-		if (name.ToLower().Contains(searchTerm.ToLower())){
-			return true;
-		}
-		return false;
 	}
 
 	private void _on_file_system_tree_multi_selected(TreeItem item, int column, bool selected)
